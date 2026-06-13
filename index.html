@@ -1,347 +1,1215 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <title>CodeShield | 소스코드 보안 리뷰 커뮤니티</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>VulnBoard — 코드 취약점 분석 커뮤니티</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Pretendard:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/tokyo-night-dark.min.css"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
   <style>
     :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --text: #c9d1d9;
-      --accent: #58a6ff;
-      --danger: #f85149;
-      --warning: #d29922;
-      --success: #56d364;
+      --bg: #0d0f14;
+      --surface: #13161e;
+      --surface2: #1a1d27;
+      --border: #252836;
+      --accent: #f97316;
+      --accent-dim: rgba(249,115,22,0.12);
+      --accent2: #38bdf8;
+      --text: #e2e4ee;
+      --text-muted: #636880;
+      --text-sub: #9497ac;
+      --red: #f43f5e;
+      --yellow: #fbbf24;
+      --green: #34d399;
+      --purple: #a78bfa;
+      --radius: 10px;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: 'Pretendard', 'Segoe UI', sans-serif;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
       background: var(--bg);
       color: var(--text);
-      padding: 20px;
-      line-height: 1.5;
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.6;
     }
 
+    /* ── HEADER ── */
     header {
-      max-width: 1200px;
-      margin: 0 auto 24px auto;
       border-bottom: 1px solid var(--border);
-      padding-bottom: 16px;
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: rgba(13,15,20,0.92);
+      backdrop-filter: blur(12px);
+      z-index: 100;
     }
-    header h1 { font-size: 24px; color: var(--accent); }
-    header p { color: #8b949e; font-size: 14px; }
 
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 24px;
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.5px;
     }
 
-    .left-panel, .right-panel {
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .logo-icon {
+      width: 28px;
+      height: 28px;
+      background: var(--accent);
       border-radius: 6px;
-      padding: 20px;
-      height: calc(100vh - 120px);
-      overflow-y: auto;
-    }
-
-    h2 { font-size: 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
-
-    textarea {
-      width: 100%;
-      height: 150px;
-      background: #090d13;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: #79c0ff;
-      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
-      padding: 12px;
-      resize: none;
-      margin-bottom: 12px;
-      outline: none;
-    }
-    textarea:focus { border-color: var(--accent); }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 8px 12px;
-      background: #090d13;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      margin-bottom: 12px;
-      outline: none;
-    }
-
-    button {
-      background: #238636;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-    button:hover { background: #2ea043; }
-
-    .post-card {
-      background: #090d13;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 16px;
-      margin-top: 16px;
-      cursor: pointer;
-      transition: border-color 0.2s;
-    }
-    .post-card:hover { border-color: var(--accent); }
-    .post-card.active { border-color: var(--accent); background: #1f242c; }
-    .post-title { font-weight: 600; margin-bottom: 8px; color: #f0f6fc; }
-    .post-meta { font-size: 12px; color: #8b949e; }
-
-    .code-view {
-      background: #090d13;
-      padding: 16px;
-      border-radius: 6px;
-      font-family: monospace;
-      white-space: pre-wrap;
-      color: #e6edf3;
-      border: 1px solid var(--border);
-      margin-bottom: 20px;
-    }
-
-    .bot-report {
-      background: rgba(210, 153, 34, 0.1);
-      border: 1px solid var(--warning);
-      border-radius: 6px;
-      padding: 12px;
-      margin-bottom: 20px;
-    }
-    .bot-report.danger {
-      background: rgba(248, 81, 73, 0.1);
-      border: 1px solid var(--danger);
-    }
-    .bot-title { font-weight: bold; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-
-    .comment-section { margin-top: 20px; border-top: 1px solid var(--border); padding-top: 20px; }
-    .comment-list { margin-bottom: 16px; }
-    .comment-item {
-      background: #090d13;
-      border: 1px solid var(--border);
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       font-size: 14px;
     }
-    .comment-user { font-weight: 600; color: var(--accent); font-size: 12px; margin-bottom: 4px; }
+
+    .logo span { color: var(--accent); }
+
+    nav { display: flex; gap: 8px; align-items: center; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn-primary:hover { background: #ea6c0a; }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-sub);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-danger { background: rgba(244,63,94,0.12); color: var(--red); border: 1px solid rgba(244,63,94,0.25); }
+    .btn-danger:hover { background: rgba(244,63,94,0.22); }
+
+    /* ── LAYOUT ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; }
+
+    main { padding: 32px 0 80px; }
+
+    /* ── PAGE VIEWS ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── LIST PAGE ── */
+    .list-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .list-title {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .list-title strong {
+      color: var(--accent);
+      font-size: 20px;
+      display: block;
+      letter-spacing: -0.5px;
+      margin-top: 2px;
+      font-family: var(--font-sans);
+    }
+
+    /* Search & filter */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      flex: 1;
+      min-width: 200px;
+      position: relative;
+    }
+
+    .search-wrap input {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 14px 9px 38px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .search-wrap input:focus { border-color: var(--accent); }
+    .search-wrap .icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .filter-select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 9px 14px;
+      color: var(--text-sub);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      outline: none;
+      cursor: pointer;
+    }
+    .filter-select:focus { border-color: var(--accent); }
+
+    /* Post cards */
+    .post-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .post-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      position: relative;
+      overflow: hidden;
+    }
+    .post-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--accent);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .post-card:hover { border-color: var(--accent); transform: translateX(2px); }
+    .post-card:hover::before { opacity: 1; }
+
+    .post-card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .post-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .lang-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .post-card-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .meta-item { display: flex; align-items: center; gap: 4px; }
+
+    .vuln-count-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .badge-none { background: rgba(100,100,120,0.15); color: var(--text-muted); }
+    .badge-low { background: rgba(52,211,153,0.12); color: var(--green); }
+    .badge-medium { background: rgba(251,191,36,0.12); color: var(--yellow); }
+    .badge-high { background: rgba(244,63,94,0.12); color: var(--red); }
+
+    .post-preview {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface2);
+      border-radius: 6px;
+      padding: 10px 12px;
+      margin-top: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: var(--text-muted);
+    }
+    .empty-state .emoji { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 15px; }
+
+    /* ── WRITE PAGE ── */
+    .write-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    .write-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .write-sub { color: var(--text-muted); font-size: 14px; margin-bottom: 28px; }
+
+    .form-group { margin-bottom: 20px; }
+
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-sub);
+      margin-bottom: 7px;
+      letter-spacing: 0.3px;
+    }
+
+    input[type=text], select, textarea {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input[type=text]:focus, select:focus, textarea:focus { border-color: var(--accent); }
+
+    textarea.code-input {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      resize: vertical;
+      min-height: 240px;
+      line-height: 1.7;
+    }
+
+    .form-row { display: flex; gap: 14px; }
+    .form-row .form-group { flex: 1; }
+
+    .char-hint { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 24px;
+    }
+
+    /* ── DETAIL PAGE ── */
+    .detail-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: color 0.15s;
+    }
+    .detail-back:hover { color: var(--accent); }
+
+    .detail-header {
+      margin-bottom: 28px;
+    }
+
+    .detail-title {
+      font-size: 26px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .detail-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    .code-block-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+
+    .code-block-lang {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
+    }
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+
+    .code-block-wrap pre {
+      margin: 0;
+      padding: 20px;
+      overflow-x: auto;
+      font-size: 13.5px;
+      line-height: 1.75;
+    }
+
+    /* ── COMMENTS ── */
+    .comments-section { margin-top: 8px; }
+
+    .comments-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .comments-title {
+      font-size: 16px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .comment-count {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .comment-form {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    .comment-form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .vuln-type-select {
+      flex: 1;
+      min-width: 160px;
+    }
+
+    .severity-select {
+      width: 130px;
+    }
+
+    .comment-textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: var(--text);
+      font-family: var(--font-sans);
+      font-size: 14px;
+      outline: none;
+      resize: vertical;
+      min-height: 90px;
+      transition: border-color 0.15s;
+    }
+    .comment-textarea:focus { border-color: var(--accent); }
+
+    .comment-form-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 10px;
+    }
+
+    .comment-list { display: flex; flex-direction: column; gap: 12px; }
+
+    .comment-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 18px;
+      transition: border-color 0.15s;
+    }
+    .comment-card:hover { border-color: var(--border); }
+
+    .comment-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    .comment-tags { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+    .vuln-tag {
+      font-size: 11px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      padding: 3px 9px;
+      border-radius: 4px;
+      letter-spacing: 0.3px;
+    }
+    .severity-critical { background: rgba(244,63,94,0.15); color: var(--red); border: 1px solid rgba(244,63,94,0.25); }
+    .severity-high { background: rgba(249,115,22,0.15); color: var(--accent); border: 1px solid rgba(249,115,22,0.25); }
+    .severity-medium { background: rgba(251,191,36,0.15); color: var(--yellow); border: 1px solid rgba(251,191,36,0.25); }
+    .severity-low { background: rgba(52,211,153,0.15); color: var(--green); border: 1px solid rgba(52,211,153,0.25); }
+    .severity-info { background: rgba(56,189,248,0.12); color: var(--accent2); border: 1px solid rgba(56,189,248,0.2); }
+
+    .vuln-type-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 4px;
+      background: rgba(167,139,250,0.12);
+      color: var(--purple);
+      border: 1px solid rgba(167,139,250,0.2);
+      font-family: var(--font-mono);
+    }
+
+    .comment-body { font-size: 14px; color: var(--text-sub); line-height: 1.65; }
+
+    .comment-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
+
+    .comment-author {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .avatar {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .comment-actions { display: flex; gap: 6px; align-items: center; }
+
+    .like-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 10px;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .like-btn:hover, .like-btn.liked { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 5px;
+      transition: all 0.15s;
+      font-family: var(--font-sans);
+    }
+    .del-btn:hover { color: var(--red); background: rgba(244,63,94,0.1); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      max-width: 380px;
+      width: 100%;
+    }
+
+    .modal h3 { font-size: 17px; margin-bottom: 8px; }
+    .modal p { color: var(--text-sub); font-size: 14px; margin-bottom: 20px; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      z-index: 999;
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.25s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      pointer-events: none;
+      max-width: 320px;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-color: rgba(52,211,153,0.4); }
+    .toast.error { border-color: rgba(244,63,94,0.4); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      header { padding: 0 16px; }
+      .container { padding: 0 16px; }
+      main { padding: 20px 0 60px; }
+      .detail-title { font-size: 20px; }
+      .form-row { flex-direction: column; gap: 0; }
+      .comment-form-row { flex-direction: column; }
+      .severity-select { width: 100%; }
+    }
+
+    /* hljs override */
+    .hljs { background: transparent !important; }
   </style>
 </head>
 <body>
 
+<!-- HEADER -->
 <header>
-  <h1>🛡️ CodeShield</h1>
-  <p>// SW공학 과제: 집단지성 및 정적 분석 기반 소스코드 보안 리뷰 커뮤니티</p>
+  <div class="logo">
+    <div class="logo-icon">🛡</div>
+    Vuln<span>Board</span>
+  </div>
+  <nav>
+    <button class="btn btn-ghost btn-sm" onclick="showView('list')">전체 게시글</button>
+    <button class="btn btn-primary btn-sm" onclick="showView('write')">+ 코드 올리기</button>
+  </nav>
 </header>
 
-<div class="container">
-  <div class="left-panel">
-    <h2>코드 리뷰 요청하기</h2>
-    <input type="text" id="postTitle" placeholder="제목을 입력하세요 (예: 로그인 로직 구현했는데 검토 부탁드립니다.)">
-    <textarea id="codeText" placeholder="여기에 분석할 소스코드를 붙여넣으세요..."></textarea>
-    <button onclick="createPost()">🚀 코드 업로드</button>
+<!-- MAIN -->
+<main>
+  <div class="container">
 
-    <h2 style="margin-top: 32px;">검토 대기 중인 코드 피드</h2>
-    <div id="postFeed"></div>
+    <!-- LIST VIEW -->
+    <div id="view-list" class="view active">
+      <div class="list-header">
+        <div class="list-title">
+          취약점 분석 커뮤니티
+          <strong id="post-count-label">전체 게시글</strong>
+        </div>
+      </div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="icon">🔍</span>
+          <input type="text" id="search-input" placeholder="게시글 검색..." oninput="renderList()"/>
+        </div>
+        <select class="filter-select" id="lang-filter" onchange="renderList()">
+          <option value="">모든 언어</option>
+          <option>Python</option>
+          <option>JavaScript</option>
+          <option>Java</option>
+          <option>C/C++</option>
+          <option>PHP</option>
+          <option>Go</option>
+          <option>Rust</option>
+          <option>기타</option>
+        </select>
+      </div>
+      <div class="post-list" id="post-list"></div>
+    </div>
+
+    <!-- WRITE VIEW -->
+    <div id="view-write" class="view">
+      <div class="write-wrap">
+        <div class="write-title">코드 올리기</div>
+        <div class="write-sub">분석받고 싶은 코드를 올려보세요. 커뮤니티가 취약점을 찾아드립니다.</div>
+
+        <div class="form-group">
+          <label>코드 이름 *</label>
+          <input type="text" id="post-title" placeholder="예) 비밀번호 키, 로그인 함수, JWT 검증 코드..."/>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>프로그래밍 언어 *</label>
+            <select id="post-lang">
+              <option value="">선택</option>
+              <option>Python</option>
+              <option>JavaScript</option>
+              <option>Java</option>
+              <option>C/C++</option>
+              <option>PHP</option>
+              <option>Go</option>
+              <option>Rust</option>
+              <option>기타</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>작성자 닉네임</label>
+            <input type="text" id="post-author" placeholder="익명"/>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>코드 *</label>
+          <textarea class="code-input" id="post-code" placeholder="여기에 코드를 붙여넣으세요..."></textarea>
+          <div class="char-hint" id="code-hint">0자</div>
+        </div>
+
+        <div class="form-group">
+          <label>설명 (선택)</label>
+          <textarea id="post-desc" style="min-height:80px;" placeholder="코드에 대한 간략한 설명이나 분석받고 싶은 부분을 적어주세요."></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-ghost" onclick="showView('list')">취소</button>
+          <button class="btn btn-primary" onclick="submitPost()">게시하기</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAIL VIEW -->
+    <div id="view-detail" class="view">
+      <div class="detail-back" onclick="showView('list')">← 목록으로</div>
+      <div class="detail-header">
+        <div class="detail-title" id="detail-title"></div>
+        <div class="detail-meta" id="detail-meta"></div>
+      </div>
+      <div id="detail-desc"></div>
+      <div class="code-block-wrap">
+        <div class="code-block-header">
+          <span class="code-block-lang" id="detail-lang"></span>
+          <button class="copy-btn" onclick="copyCode()">📋 복사</button>
+        </div>
+        <pre><code id="detail-code" class="hljs"></code></pre>
+      </div>
+
+      <div class="comments-section">
+        <div class="comments-header">
+          <div class="comments-title">취약점 분석 댓글 <span class="comment-count" id="comment-count">0</span></div>
+        </div>
+        <div class="comment-form">
+          <div class="comment-form-row">
+            <select class="vuln-type-select" id="comment-vuln-type">
+              <option value="">취약점 유형 선택</option>
+              <option>SQL Injection</option>
+              <option>XSS (크로스 사이트 스크립팅)</option>
+              <option>CSRF</option>
+              <option>하드코딩된 자격증명</option>
+              <option>버퍼 오버플로우</option>
+              <option>경쟁 조건 (Race Condition)</option>
+              <option>인증/인가 취약점</option>
+              <option>암호화 취약점</option>
+              <option>입력 검증 미흡</option>
+              <option>에러 처리 미흡</option>
+              <option>기타 취약점</option>
+            </select>
+            <select class="severity-select" id="comment-severity">
+              <option value="">심각도</option>
+              <option value="critical">🔴 Critical</option>
+              <option value="high">🟠 High</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="low">🟢 Low</option>
+              <option value="info">🔵 Info</option>
+            </select>
+          </div>
+          <div class="form-group" style="margin-bottom:0">
+            <input type="text" id="comment-author" placeholder="닉네임 (익명)" style="margin-bottom:8px;"/>
+            <textarea class="comment-textarea" id="comment-body" placeholder="발견한 취약점과 개선 방안을 설명해 주세요..."></textarea>
+          </div>
+          <div class="comment-form-footer">
+            <button class="btn btn-primary btn-sm" onclick="submitComment()">분석 등록</button>
+          </div>
+        </div>
+        <div class="comment-list" id="comment-list"></div>
+      </div>
+    </div>
+
   </div>
+</main>
 
-  <div class="right-panel" id="detailPanel">
-    <p style="color: #8b949e; text-align: center; margin-top: 50px;">왼쪽 피드에서 코드를 선택하면 상세 보안 리포트와 커뮤니티 리뷰를 볼 수 있습니다.</p>
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">삭제 확인</h3>
+    <p id="modal-body">이 항목을 삭제하시겠습니까? 되돌릴 수 없습니다.</p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost btn-sm" onclick="closeModal()">취소</button>
+      <button class="btn btn-danger btn-sm" id="modal-confirm">삭제</button>
+    </div>
   </div>
 </div>
 
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
 <script>
-  // 모의 데이터 설정
-  let posts = [
-    {
-      id: 1,
-      title: "Node.js 로그인 검증 로직 구현했습니다.",
-      code: "const query = `SELECT * FROM users WHERE id = '${req.body.id}' AND pw = '${req.body.pw}'`;\ndb.query(query, (err, result) => {\n  if(result.length > 0) res.send('Welcome');\n});",
-      comments: [
-        { user: "WhiteHat_99", text: "이거 전형적인 SQL Injection 취약점이네요. req.body.id 자리에 ' OR '1'='1 구문을 넣으면 패스워드 없이 로그인이 뚫립니다. Prepared Statement를 쓰세요!" },
-        { user: "SecCoder", text: "맞습니다. 문자열 결합 방식으로 SQL문을 생성하는 것은 소프트웨어 공학 보안 설계 원칙(Secure Coding)에 위배됩니다." }
-      ]
-    },
-    {
-      id: 2,
-      title: "댓글 저장 후 화면에 출력하는 간단한 자바스크립트",
-      code: "function showComment(data) {\n  const box = document.getElementById('comment-box');\n  box.innerHTML = `<div>${data.comment}</div>`;\n}",
-      comments: [
-        { user: "NoXSS", text: "innerHTML을 그대로 사용하시면 사용자가 입력한 <script>악성코드</script>가 다른 사람 브라우저에서 실행될 수 있습니다. textContent를 사용하시거나 이스케이프 처리를 하셔야 안전합니다." }
-      ]
-    }
-  ];
+  // ── DATA ──────────────────────────────────────────────────
+  const LS_POSTS = 'vulnboard_posts';
+  const LS_COMMENTS = 'vulnboard_comments';
 
-  let currentPostId = null;
+  function loadPosts() {
+    try { return JSON.parse(localStorage.getItem(LS_POSTS)) || []; } catch { return []; }
+  }
+  function savePosts(posts) { localStorage.setItem(LS_POSTS, JSON.stringify(posts)); }
+  function loadComments() {
+    try { return JSON.parse(localStorage.getItem(LS_COMMENTS)) || {}; } catch { return {}; }
+  }
+  function saveComments(comments) { localStorage.setItem(LS_COMMENTS, JSON.stringify(comments)); }
 
-  // 1. 자동 정적 분석 엔진
-  function runStaticAnalysis(code) {
-    let findings = [];
-    
-    if (code.includes("SELECT") && (code.match(/\${.+}/) || code.match(/\+\s*[a-zA-Z0-9_.]+/))) {
-      if(code.includes("`") || code.includes("'") || code.includes('"')) {
-        findings.push({
-          level: "danger",
-          title: "🚨 치명적: SQL 인젝션(SQL Injection) 위험 감지",
-          desc: "사용자 입력값이 검증 없이 SQL 쿼리 문자열과 직접 결합되고 있습니다. 공격자가 데이터베이스를 조작하거나 인증을 우회할 수 있습니다."
-        });
+  // seed demo data if empty
+  function seedIfEmpty() {
+    const posts = loadPosts();
+    if (posts.length > 0) return;
+
+    const demo = [
+      {
+        id: 'demo1',
+        title: '비밀번호 키',
+        lang: 'Python',
+        author: 'admin',
+        code: `SECRET_KEY = "mypassword123"\nDB_PASSWORD = "root1234"\n\ndef login(username, password):\n    # 평문으로 비밀번호 비교\n    if password == DB_PASSWORD:\n        return True\n    return False\n\n# 로그에 비밀번호 출력\nprint(f"DB에 연결 중... 비밀번호: {DB_PASSWORD}")`,
+        desc: '로그인 처리 코드입니다. 보안 이슈가 있는지 확인해 주세요.',
+        createdAt: Date.now() - 86400000
+      },
+      {
+        id: 'demo2',
+        title: 'SQL 쿼리 빌더',
+        lang: 'JavaScript',
+        author: 'dev42',
+        code: `function getUserByName(name) {\n  const query = "SELECT * FROM users WHERE name = '" + name + "'";\n  return db.execute(query);\n}\n\nfunction deleteUser(id) {\n  const query = \`DELETE FROM users WHERE id = \${id}\`;\n  return db.execute(query);\n}`,
+        desc: '사용자 검색 및 삭제 함수입니다.',
+        createdAt: Date.now() - 3600000
       }
-    }
+    ];
 
-    if (code.includes(".innerHTML")) {
-      findings.push({
-        level: "warning",
-        title: "⚠️ 경고: 크로스 사이트 스크립팅(XSS) 취약점 위험",
-        desc: "innerHTML을 사용해 데이터를 출력하면 악성 스크립트 주입 공격에 노출될 수 있습니다. 안전한 대안인 textContent를 사용하십시오."
-      });
-    }
-
-    const keyPattern = /(secret|api_key|password|token)\s*=\s*['"`][a-zA-Z0-9_-]{12,}['"`]/i;
-    if (keyPattern.test(code)) {
-      findings.push({
-        level: "danger",
-        title: "🚨 치명적: 중요 자격 증명 하드코딩(Hardcoded Credentials)",
-        desc: "소스코드 내부에 보안 키 혹은 비밀번호가 평문으로 노출되어 있습니다. 소스코드 유출 시 2차 피해로 이어집니다. 환경 변수(.env)로 분리하세요."
-      });
-    }
-
-    return findings;
-  }
-
-  // 2. 피드 목록 렌더링
-  function renderFeed() {
-    const feed = document.getElementById('postFeed');
-    feed.innerHTML = '';
-    posts.forEach(post => {
-      const card = document.createElement('div');
-      card.className = `post-card ${currentPostId === post.id ? 'active' : ''}`;
-      card.onclick = () => selectPost(post.id);
-      card.innerHTML = `
-        <div class="post-title">${post.title}</div>
-        <div class="post-meta">💬 리뷰 토론 ${post.comments.length}개 체결됨</div>
-      `;
-      feed.appendChild(card);
-    });
-  }
-
-  // 3. 새 게시글 생성
-  function createPost() {
-    const title = document.getElementById('postTitle').value.trim();
-    const code = document.getElementById('codeText').value.trim();
-
-    if (!title || !code) return alert("제목과 코드를 입력해주세요.");
-
-    const newPost = {
-      id: Date.now(),
-      title: title,
-      code: code,
-      comments: []
+    const demoComments = {
+      demo1: [
+        {
+          id: 'c1',
+          vulnType: '하드코딩된 자격증명',
+          severity: 'critical',
+          author: 'SecurityResearcher',
+          body: '소스코드에 SECRET_KEY와 DB_PASSWORD가 평문으로 하드코딩되어 있습니다. 코드가 외부에 노출되면 즉시 시스템 전체가 침해됩니다. 환경 변수(.env)나 비밀 관리 서비스(Vault 등)를 사용해 주세요.',
+          likes: 5,
+          createdAt: Date.now() - 3000000
+        },
+        {
+          id: 'c2',
+          vulnType: '암호화 취약점',
+          severity: 'high',
+          author: 'CryptoHunter',
+          body: '비밀번호를 평문으로 비교하고 있습니다. bcrypt, argon2 등 단방향 해시 함수를 사용해 해시된 값을 저장하고 비교해야 합니다.',
+          likes: 3,
+          createdAt: Date.now() - 1800000
+        }
+      ]
     };
 
-    posts.unshift(newPost);
-    document.getElementById('postTitle').value = '';
-    document.getElementById('codeText').value = '';
-    
-    currentPostId = newPost.id;
-    renderFeed();
-    selectPost(newPost.id);
+    savePosts(demo);
+    saveComments(demoComments);
   }
 
-  // 4. 게시글 선택 및 상세 페이지 구성
-  function selectPost(id) {
-    currentPostId = id;
-    renderFeed();
-    
-    const post = posts.find(p => p.id === id);
-    const panel = document.getElementById('detailPanel');
-    const botFindings = runStaticAnalysis(post.code);
-    let botReportHtml = '';
+  // ── STATE ─────────────────────────────────────────────────
+  let currentPostId = null;
+  let pendingDelete = null;
 
-    if (botFindings.length > 0) {
-      botFindings.forEach(f => {
-        botReportHtml += `
-          <div class="bot-report ${f.level}">
-            <div class="bot-title">${f.title}</div>
-            <p style="font-size: 13px; color: #e6edf3;">${f.desc}</p>
-          </div>
-        `;
-      });
-    } else {
-      botReportHtml = `
-        <div class="bot-report" style="border-color: var(--success); background: rgba(86,211,100,0.1)">
-          <div class="bot-title" style="color: var(--success)">✓ Security Bot: 안전함</div>
-          <p style="font-size: 13px;">기본적인 패턴 분석 결과 알려진 취약점을 발견하지 못했습니다. (동적 검증 필요)</p>
-        </div>
-      `;
+  // ── VIEW ──────────────────────────────────────────────────
+  function showView(name, postId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + name).classList.add('active');
+    window.scrollTo(0, 0);
+
+    if (name === 'list') renderList();
+    if (name === 'write') resetWriteForm();
+    if (name === 'detail' && postId) {
+      currentPostId = postId;
+      renderDetail(postId);
+    }
+  }
+
+  // ── LIST ──────────────────────────────────────────────────
+  function renderList() {
+    const posts = loadPosts();
+    const comments = loadComments();
+    const query = document.getElementById('search-input').value.toLowerCase();
+    const lang = document.getElementById('lang-filter').value;
+
+    let filtered = posts.filter(p => {
+      const matchQ = !query || p.title.toLowerCase().includes(query) || p.author.toLowerCase().includes(query);
+      const matchL = !lang || p.lang === lang;
+      return matchQ && matchL;
+    }).sort((a, b) => b.createdAt - a.createdAt);
+
+    document.getElementById('post-count-label').textContent = `전체 ${filtered.length}개 게시글`;
+    const container = document.getElementById('post-list');
+
+    if (filtered.length === 0) {
+      container.innerHTML = `<div class="empty-state"><div class="emoji">🔍</div><p>게시글이 없습니다. 첫 코드를 올려보세요!</p></div>`;
+      return;
     }
 
-    let commentsHtml = '';
-    post.comments.forEach(c => {
-      commentsHtml += `
-        <div class="comment-item">
-          <div class="comment-user">👤 ${c.user}</div>
-          <div>${c.text}</div>
+    container.innerHTML = filtered.map(post => {
+      const cList = comments[post.id] || [];
+      const count = cList.length;
+      const hasCritical = cList.some(c => c.severity === 'critical');
+      const hasHigh = cList.some(c => c.severity === 'high');
+      const hasMedium = cList.some(c => c.severity === 'medium');
+
+      let badgeClass = 'badge-none', badgeLabel = '분석 대기중';
+      if (count > 0) {
+        if (hasCritical) { badgeClass = 'badge-high'; badgeLabel = '🔴 Critical 발견'; }
+        else if (hasHigh) { badgeClass = 'badge-medium'; badgeLabel = '🟠 High 발견'; }
+        else if (hasMedium) { badgeClass = 'badge-low'; badgeLabel = '🟡 Medium'; }
+        else { badgeClass = 'badge-low'; badgeLabel = '🟢 낮은 위험'; }
+      }
+
+      const preview = post.code.split('\n')[0].trim().slice(0, 80);
+
+      return `<div class="post-card" onclick="showView('detail','${post.id}')">
+        <div class="post-card-top">
+          <div class="post-card-title">
+            <span class="lang-badge">${esc(post.lang)}</span>
+            ${esc(post.title)}
+          </div>
+          <span class="vuln-count-badge ${badgeClass}">${count > 0 ? `${count}개 분석` : badgeLabel}</span>
         </div>
-      `;
+        <div class="post-card-meta">
+          <span class="meta-item">👤 ${esc(post.author || '익명')}</span>
+          <span class="meta-item">🕐 ${timeAgo(post.createdAt)}</span>
+          ${count > 0 ? `<span class="meta-item">💬 댓글 ${count}</span>` : ''}
+        </div>
+        <div class="post-preview">${esc(preview)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ── WRITE ─────────────────────────────────────────────────
+  function resetWriteForm() {
+    ['post-title','post-lang','post-author','post-code','post-desc'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
     });
-
-    panel.innerHTML = `
-      <h2 style="color: #f0f6fc;">${post.title}</h2>
-      <div class="code-view">${escapeHtml(post.code)}</div>
-      
-      <h3 style="font-size: 14px; color: #8b949e; margin-bottom: 8px;">🤖 Automated CodeShield Bot Diagnosis</h3>
-      ${botReportHtml}
-
-      <div class="comment-section">
-        <h3 style="font-size: 16px; margin-bottom: 12px;">Peer Code Review (${post.comments.length})</h3>
-        <div class="comment-list">${commentsHtml || '<p style="color:#8b949e;font-size:13px">아직 등록된 리뷰 의견이 없습니다. 첫 의견을 남겨보세요!</p>'}</div>
-        
-        <div style="display:flex; gap:8px; margin-top:16px;">
-          <input type="text" id="newComment" placeholder="이 코드의 취약점이나 수정 제안을 적어주세요..." style="margin-bottom:0; flex:1;">
-          <button onclick="addComment(${post.id})" style="background: var(--accent)">리뷰 등록</button>
-        </div>
-      </div>
-    `;
+    document.getElementById('code-hint').textContent = '0자';
   }
 
-  // 5. 댓글 추가 기능
-  function addComment(postId) {
-    const input = document.getElementById('newComment');
-    const text = input.value.trim();
-    if (!text) return;
+  document.addEventListener('DOMContentLoaded', () => {
+    const codeInput = document.getElementById('post-code');
+    if (codeInput) {
+      codeInput.addEventListener('input', () => {
+        document.getElementById('code-hint').textContent = codeInput.value.length + '자';
+      });
+    }
+  });
 
+  function submitPost() {
+    const title = document.getElementById('post-title').value.trim();
+    const lang = document.getElementById('post-lang').value;
+    const author = document.getElementById('post-author').value.trim() || '익명';
+    const code = document.getElementById('post-code').value.trim();
+    const desc = document.getElementById('post-desc').value.trim();
+
+    if (!title) { showToast('코드 이름을 입력해 주세요.', 'error'); return; }
+    if (!lang) { showToast('프로그래밍 언어를 선택해 주세요.', 'error'); return; }
+    if (!code) { showToast('코드를 입력해 주세요.', 'error'); return; }
+
+    const post = { id: uid(), title, lang, author, code, desc, createdAt: Date.now() };
+    const posts = loadPosts();
+    posts.unshift(post);
+    savePosts(posts);
+
+    showToast('게시글이 등록되었습니다! 🎉', 'success');
+    showView('detail', post.id);
+  }
+
+  // ── DETAIL ────────────────────────────────────────────────
+  function renderDetail(postId) {
+    const posts = loadPosts();
     const post = posts.find(p => p.id === postId);
-    const randomUser = "Reviewer_" + Math.floor(Math.random() * 900 + 100);
-    
-    post.comments.push({ user: randomUser, text: text });
-    selectPost(postId);
+    if (!post) { showView('list'); return; }
+
+    document.getElementById('detail-title').innerHTML =
+      `<span class="lang-badge">${esc(post.lang)}</span> ${esc(post.title)}`;
+
+    document.getElementById('detail-meta').innerHTML =
+      `<span class="meta-item">👤 ${esc(post.author || '익명')}</span>
+       <span class="meta-item">🕐 ${timeAgo(post.createdAt)}</span>
+       <button class="btn btn-danger btn-sm" style="margin-left:auto;" onclick="confirmDeletePost('${post.id}')">삭제</button>`;
+
+    const descEl = document.getElementById('detail-desc');
+    if (post.desc) {
+      descEl.innerHTML = `<p style="color:var(--text-sub);font-size:14px;margin-bottom:20px;padding:14px 16px;background:var(--surface);border-radius:8px;border-left:3px solid var(--accent)">${esc(post.desc)}</p>`;
+    } else {
+      descEl.innerHTML = '';
+    }
+
+    document.getElementById('detail-lang').textContent = post.lang;
+    const codeEl = document.getElementById('detail-code');
+    codeEl.textContent = post.code;
+    codeEl.removeAttribute('data-highlighted');
+    hljs.highlightElement(codeEl);
+
+    renderComments(postId);
   }
 
-  // 6. 특수문자 치환 함수 (HTML 깨짐 방지)
-  function escapeHtml(text) {
-    return text
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+  function copyCode() {
+    const code = document.getElementById('detail-code').textContent;
+    navigator.clipboard.writeText(code).then(() => showToast('코드가 복사되었습니다!', 'success'));
   }
 
-  // 최초 로드 실행
-  renderFeed();
+  // ── COMMENTS ──────────────────────────────────────────────
+  function renderComments(postId) {
+    const all = loadComments();
+    const list = (all[postId] || []).sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
+    document.getElementById('comment-count').textContent = list.length;
+
+    const container = document.getElementById('comment-list');
+    if (list.length === 0) {
+      container.innerHTML = `<div class="empty-state" style="padding:40px 0"><div class="emoji" style="font-size:36px">🔎</div><p style="font-size:14px">아직 분석 댓글이 없습니다. 첫 번째 분석을 남겨보세요!</p></div>`;
+      return;
+    }
+
+    container.innerHTML = list.map(c => {
+      const avatarColors = ['#f97316','#38bdf8','#a78bfa','#34d399','#fbbf24','#f43f5e'];
+      const color = avatarColors[c.author.charCodeAt(0) % avatarColors.length];
+      return `<div class="comment-card" id="comment-${c.id}">
+        <div class="comment-header">
+          <div class="comment-tags">
+            ${c.severity ? `<span class="vuln-tag severity-${c.severity}">${severityLabel(c.severity)}</span>` : ''}
+            ${c.vulnType ? `<span class="vuln-type-badge">${esc(c.vulnType)}</span>` : ''}
+          </div>
+        </div>
+        <div class="comment-body">${esc(c.body)}</div>
+        <div class="comment-footer">
+          <div class="comment-author">
+            <div class="avatar" style="background:${color}20;color:${color}">${(c.author||'익')[0].toUpperCase()}</div>
+            ${esc(c.author || '익명')} · ${timeAgo(c.createdAt)}
+          </div>
+          <div class="comment-actions">
+            <button class="like-btn ${c.liked?'liked':''}" onclick="toggleLike('${currentPostId}','${c.id}')">👍 ${c.likes||0}</button>
+            <button class="del-btn" onclick="confirmDeleteComment('${currentPostId}','${c.id}')">삭제</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function submitComment() {
+    const vulnType = document.getElementById('comment-vuln-type').value;
+    const severity = document.getElementById('comment-severity').value;
+    const author = document.getElementById('comment-author').value.trim() || '익명';
+    const body = document.getElementById('comment-body').value.trim();
+
+    if (!body) { showToast('분석 내용을 입력해 주세요.', 'error'); return; }
+
+    const comment = { id: uid(), vulnType, severity, author, body, likes: 0, liked: false, createdAt: Date.now() };
+    const all = loadComments();
+    if (!all[currentPostId]) all[currentPostId] = [];
+    all[currentPostId].push(comment);
+    saveComments(all);
+
+    document.getElementById('comment-vuln-type').value = '';
+    document.getElementById('comment-severity').value = '';
+    document.getElementById('comment-author').value = '';
+    document.getElementById('comment-body').value = '';
+
+    renderComments(currentPostId);
+    showToast('분석이 등록되었습니다!', 'success');
+  }
+
+  function toggleLike(postId, commentId) {
+    const all = loadComments();
+    const c = (all[postId] || []).find(c => c.id === commentId);
+    if (!c) return;
+    c.liked = !c.liked;
+    c.likes = (c.likes || 0) + (c.liked ? 1 : -1);
+    saveComments(all);
+    renderComments(postId);
+  }
+
+  // ── DELETE ────────────────────────────────────────────────
+  function confirmDeletePost(postId) {
+    pendingDelete = { type: 'post', postId };
+    document.getElementById('modal-title').textContent = '게시글 삭제';
+    document.getElementById('modal-body').textContent = '이 게시글과 모든 댓글을 삭제하시겠습니까?';
+    document.getElementById('modal-confirm').onclick = doDelete;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function confirmDeleteComment(postId, commentId) {
+    pendingDelete = { type: 'comment', postId, commentId };
+    document.getElementById('modal-title').textContent = '댓글 삭제';
+    document.getElementById('modal-body').textContent = '이 분석 댓글을 삭제하시겠습니까?';
+    document.getElementById('modal-confirm').onclick = doDelete;
+    document.getElementById('modal').classList.add('open');
+  }
+
+  function doDelete() {
+    if (!pendingDelete) return;
+    if (pendingDelete.type === 'post') {
+      const posts = loadPosts().filter(p => p.id !== pendingDelete.postId);
+      savePosts(posts);
+      const all = loadComments();
+      delete all[pendingDelete.postId];
+      saveComments(all);
+      closeModal();
+      showToast('게시글이 삭제되었습니다.', 'success');
+      showView('list');
+    } else {
+      const all = loadComments();
+      all[pendingDelete.postId] = (all[pendingDelete.postId] || []).filter(c => c.id !== pendingDelete.commentId);
+      saveComments(all);
+      closeModal();
+      renderComments(currentPostId);
+      showToast('댓글이 삭제되었습니다.', 'success');
+    }
+    pendingDelete = null;
+  }
+
+  function closeModal() {
+    document.getElementById('modal').classList.remove('open');
+  }
+  document.getElementById('modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+
+  // ── TOAST ─────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className = 'toast show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+  }
+
+  // ── UTILS ─────────────────────────────────────────────────
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function timeAgo(ts) {
+    const diff = (Date.now() - ts) / 1000;
+    if (diff < 60) return '방금 전';
+    if (diff < 3600) return Math.floor(diff / 60) + '분 전';
+    if (diff < 86400) return Math.floor(diff / 3600) + '시간 전';
+    if (diff < 2592000) return Math.floor(diff / 86400) + '일 전';
+    return new Date(ts).toLocaleDateString('ko-KR');
+  }
+
+  function severityLabel(s) {
+    return { critical:'🔴 Critical', high:'🟠 High', medium:'🟡 Medium', low:'🟢 Low', info:'🔵 Info' }[s] || s;
+  }
+
+  // ── INIT ──────────────────────────────────────────────────
+  seedIfEmpty();
+  renderList();
 </script>
 </body>
 </html>
